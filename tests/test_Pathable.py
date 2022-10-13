@@ -1,6 +1,5 @@
-# import tmpme as me
-import common as me
 
+from pynico_eros_montin import pynico as me
 
 thestring='/data/tmp/4657f33d-4582-4507-8d2f-f78698563410/myfilename.json.tar.gz'
 A=me.Pathable(thestring)

@@ -3,7 +3,6 @@ from genericpath import exists
 import json
 import tarfile
 
-from hamcrest import none
 
 def unTarGz(fname):
     tar = tarfile.open(fname, "r:gz")

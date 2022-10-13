@@ -1,5 +1,5 @@
 # import tmpme as me
-import common as me
+from pynico_eros_montin import pynico as me
 
 
 G=me.GarbageCollector()
