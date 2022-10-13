@@ -1,9 +1,9 @@
 
 from pynico_eros_montin import pynico as me
 
-thestring=me.createTemporaryPosition('oo.nii.gz')
-print(f'the original file {thestring}')
-A=me.Pathable(thestring)
+# thestring=me.createTemporaryPosition('oo.nii.gz')
+# print(f'the original file {thestring}')
+A=me.PathableTemp('oo.nii.gz')
 
 print(A.isFile())
 print(A.isDir())

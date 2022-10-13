@@ -386,7 +386,7 @@ class Pathable:
         """        
         basename=self.getBaseName()
         self.setPosition(os.path.join(path,basename))
-        return self.getPosition()
+        return self
 
     def changePathToOSTemporary(self):
         """Change the path of the position to os tmp
@@ -401,17 +401,22 @@ class Pathable:
     def changeBaseName(self,name):
         pt=self.getPath()
         self.setPosition(os.path.join(pt,name))
-        return self.getPosition()
+        return self
+    
 
-    def changeBaseNameWithoutExtension(self,name):
+    def changeBaseNameWithoutExtension(self,name=None):
         pt=self.getPath()
         E=self.getExtension()
-
+        if not name:
+            name=str(uuid.uuid4())
         self.setPosition(os.path.join(pt,name + '.' + E))
-        return self.getPosition()
+        return self
 
     def changeFileName(self,name):
         return self.changeBaseName(name)
+
+    def changeFileNameWithoutExtension(self,name=None):
+        return self.changeBaseNameWithoutExtension(name)
     
     def addSuffix(self,suf):
         return self.changePositionSuffixPrefix(suffix=suf)
@@ -463,7 +468,7 @@ class Pathable:
         
     def changeBaseNameWithoutExtensionRandom(self):
         if self.isFile():
-            return self.changeBaseNameWithoutExtension(str(uuid.uuid4()))
+            return self
     
     def ensureDirectoryExistence(self):
         try:
@@ -544,6 +549,8 @@ class Pathable:
         return self.changePath(p)
     
     
-
+class PathableTemp(Pathable):
+    def __init__(self,filename):
+        super().__init__(createTemporaryPosition(filename))
 
     
