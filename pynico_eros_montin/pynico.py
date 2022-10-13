@@ -1,9 +1,14 @@
 import datetime
-from genericpath import exists
+import os
 import json
 import tarfile
+import tempfile
 
-
+def createTemporaryPosition(fn,tmp=None):
+    if not tmp:
+        tmp = tempfile.gettempdir()
+    return os.path.join(tmp,fn)
+        
 def unTarGz(fname):
     tar = tarfile.open(fname, "r:gz")
     tar.extractall()
@@ -382,6 +387,16 @@ class Pathable:
         basename=self.getBaseName()
         self.setPosition(os.path.join(path,basename))
         return self.getPosition()
+
+    def changePathToOSTemporary(self):
+        """Change the path of the position to os tmp
+
+        Args:
+
+        Returns:
+            _type_: the new position
+        """        
+        return self.changePath(tempfile.gettempdir())
     
     def changeBaseName(self,name):
         pt=self.getPath()
@@ -527,5 +542,8 @@ class Pathable:
             p=os.path.join(p,t)
 
         return self.changePath(p)
+    
+    
+
 
     
