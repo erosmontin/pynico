@@ -1,2 +1,2 @@
-# nitnom
-a python package to make you lfe easier
+# pynico
+a python package to make your life simpler, at least mine
