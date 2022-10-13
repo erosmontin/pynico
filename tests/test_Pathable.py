@@ -31,7 +31,7 @@ A.appendPath('fdd'), print(A.getPosition())
 A.appendPathRandom(), print(A.getPosition())
 A.removeLastPath(), print(A.getPosition())
 A.renamePath('t','dededede'), print(A.getPosition())
-
+A.changePathToOSTemporary(), print(A.getPosition())
 #undoing
 print("\n\n\nundoing",end="\n\n\n")
 A.undo(), print(A.getPosition())
