@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+
+[project]
+name = "pynico_package_eros.montin"
+version = "0.0.1"
+authors = [
+  { name="Eros Montin, PhD", email="eros.montin@gmail.com" },
+]
+description = "Handy things you need, at least me"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/erosmontin/pynico"
+"Bug Tracker" = "https://github.com/erosmontin/pynico/issues"
