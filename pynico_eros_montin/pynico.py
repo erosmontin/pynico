@@ -409,8 +409,14 @@ class Pathable:
         E=self.getExtension()
         if not name:
             name=str(uuid.uuid4())
+        if E[0]== '.':
+            E=E[1:] 
         self.setPosition(os.path.join(pt,name + '.' + E))
         return self
+    def setRandomFilName(self):
+        return self.changeFileNameWithoutExtension()
+    def setRandomBaseName(self):
+        return self.changeBaseNameWithoutExtension()
 
     def changeFileName(self,name):
         return self.changeBaseName(name)
@@ -468,7 +474,7 @@ class Pathable:
         
     def changeBaseNameWithoutExtensionRandom(self):
         if self.isFile():
-            return self
+            return self.changeBaseNameWithoutExtension()
     
     def ensureDirectoryExistence(self):
         try:
