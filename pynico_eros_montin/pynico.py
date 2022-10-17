@@ -4,7 +4,7 @@ import json
 import tarfile
 import tempfile
 
-def createTemporaryPosition(fn,tmp=None):
+def createTemporaryPosition(fn='',tmp=None):
     if not tmp:
         tmp = tempfile.gettempdir()
     return os.path.join(tmp,fn)
@@ -413,10 +413,6 @@ class Pathable:
             E=E[1:] 
         self.setPosition(os.path.join(pt,name + '.' + E))
         return self
-    def setRandomFilName(self):
-        return self.changeFileNameWithoutExtension()
-    def setRandomBaseName(self):
-        return self.changeBaseNameWithoutExtension()
 
     def changeFileName(self,name):
         return self.changeBaseName(name)
@@ -480,8 +476,8 @@ class Pathable:
         try:
             os.makedirs(self.getPath(), exist_ok=True)
         except:
-            return False
-        return True
+            raise Exception(f" can't write on {self.getPosition()}")
+            
 
     def getFilesInPathByExtension(self,ext=None,sort=True):
         
