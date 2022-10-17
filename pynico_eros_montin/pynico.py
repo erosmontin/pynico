@@ -428,8 +428,13 @@ class Pathable:
         return self.changePath(os.path.join(pt,np))
     
     def appendPathRandom(self):
-
         return self.appendPath(str(uuid.uuid4()))
+    
+    def generateSafePath(self):
+        self.appendPath(str(uuid.uuid4()))
+        self.ensureDirectoryExistence()
+        
+
     
     def removeLastPath(self):
         pt=self.getPath()
