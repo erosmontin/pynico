@@ -3,7 +3,8 @@ from pynico_eros_montin import pynico as me
 
 # thestring=me.createTemporaryPosition('oo.nii.gz')
 # print(f'the original file {thestring}')
-A=me.PathableTemp('oo.nii.gz')
+A=me.createTemporaryPathableFromFileName('oo.nii.gz')
+print(A.getPosition())
 
 print(A.isFile())
 print(A.isDir())
@@ -32,6 +33,8 @@ A.appendPathRandom(), print(A.getPosition())
 A.removeLastPath(), print(A.getPosition())
 A.renamePath('t','dededede'), print(A.getPosition())
 A.changePathToOSTemporary(), print(A.getPosition())
+A.changePathToOSTemporary(), print(A.getPosition())
+
 #undoing
 print("\n\n\nundoing",end="\n\n\n")
 A.undo(), print(A.getPosition())

@@ -25,4 +25,11 @@ for t in range(55):
     # G.throw(A.getPosition())
     A.undo()
 
+A.changeBaseNameSafe('a.txt')
+print(A.getPosition())
 
+AA=me.PathableTemp('')
+AA.changePathToSafePath()
+
+AA.changeBaseNameSafe('a.txt')
+print(AA.getPosition())

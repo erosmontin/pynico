@@ -4,10 +4,29 @@ import json
 import tarfile
 import tempfile
 
+
 def createTemporaryPosition(fn='',tmp=None):
     if not tmp:
         tmp = tempfile.gettempdir()
     return os.path.join(tmp,fn)
+
+def createRandomTemporaryPathableFromFileName(fn,tmp=None):    
+    P=Pathable(createTemporaryPosition(fn,tmp))
+    P.changeBaseNameSafe()
+    P.ensureDirectoryExistence()
+    return P
+
+def createTemporaryPathableFromFileName(fn,tmp=None):    
+    P=Pathable(createTemporaryPosition(fn,tmp))
+    P.ensureDirectoryExistence()
+    return P
+def createTemporaryPathableDirectory(tmp=None):    
+    if not tmp:
+        tmp = createTemporaryPosition()
+    P=Pathable(tmp)
+    P.appendPathRandom()
+    P.ensureDirectoryExistence()
+    return P
         
 def unTarGz(fname):
     tar = tarfile.open(fname, "r:gz")
@@ -398,10 +417,21 @@ class Pathable:
         """        
         return self.changePath(tempfile.gettempdir())
     
-    def changeBaseName(self,name):
+    def changeBaseName(self,name=None):
+        if not name:
+            raise Exception("no filename specified did you want to change basename randomly?")
         pt=self.getPath()
         self.setPosition(os.path.join(pt,name))
         return self
+
+
+    def changeRootBaseName(self,name):
+        return self.changeBaseNameWithoutExtension(name)
+    
+    def changeRootFileName(self,name):
+        pt=self.getPath()
+        return self.changeFileNameWithoutExtension(name)
+    
     
 
     def changeBaseNameWithoutExtension(self,name=None):
@@ -430,10 +460,32 @@ class Pathable:
     def appendPathRandom(self):
         return self.appendPath(str(uuid.uuid4()))
     
-    def generateSafePath(self):
+    
+    
+    def changePathToSafePath(self):
         self.appendPath(str(uuid.uuid4()))
         self.ensureDirectoryExistence()
-        
+        return self
+
+    def changeBaseNameSafe(self,f=None):
+        if f:
+            O=Pathable(f)
+            EXT=O.getExtension()
+            if EXT:
+                self.changeExtension(EXT)
+            self.changeBaseNameWithoutExtension()
+            return self 
+        return self.changeBaseNameWithoutExtension()
+
+
+    def addFileName(self,filename=None):
+        if self.isDir():
+            if not filename:
+                filename=str(uuid.uuid4())+'.pathable'
+            return self.setPosition(os.path.join(self.getPosition(),filename))
+        elif self.isFile():
+            return self.changeFileName(filename)
+        return self
 
     
     def removeLastPath(self):
@@ -555,9 +607,42 @@ class Pathable:
 
         return self.changePath(p)
     
-    
-class PathableTemp(Pathable):
-    def __init__(self,filename):
-        super().__init__(createTemporaryPosition(filename))
+    def unTarGz(self,PT=None):
+        if not PT:
+            PT=createTemporaryPathableDirectory().getPosition()
+        unTarGz(self.getPosition())
 
+    def unTar(self,PT=None):
+        if not PT:
+            PT=createTemporaryPathableDirectory().getPosition()
+        unTar(self.getPosition())
+
+    def readJson(self):
+        return readJson(self.getPosition())
+
+    def writeJson(self,data):
+        return writeJsonFile(self.getPosition(),data)
+
+    def readPkl(self):
+        return readPkl(self.getPosition())
+
+    def writePkl(self,data=[]):
+        return writePkl(self.getPosition(),data)
     
+
+
+
+
+
+
+if __name__=="__main__":
+
+    AA=createTemporaryPathableDirectory()
+    AA.addFileName()
+    print(AA.getPosition())
+    AA.changeBaseName('a.txt')
+    print(AA.getPosition())
+    AA.changeBaseName()
+    print(AA.getPosition())
+
+
