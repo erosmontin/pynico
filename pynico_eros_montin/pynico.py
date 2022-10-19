@@ -47,6 +47,12 @@ def writeJsonFile(filename,data):
     with open(filename, 'w') as outfile:
         json.dump(data, outfile)
 
+def readCsv(filename):
+    F=[]
+    with open(filename) as f:
+        while line := f.readline():
+            F.append(line)
+
 import pickle
 
 def readPkl(filename):
@@ -336,7 +342,8 @@ class Pathable:
 
     def __init__(self, position):
         self.positionStack =Stack()
-        self.positionStack.push(position)
+        if position:
+            self.positionStack.push(position)
 
     def isDir(self):
         if self.exists():
@@ -476,6 +483,14 @@ class Pathable:
             self.changeBaseNameWithoutExtension()
             return self 
         return self.changeBaseNameWithoutExtension()
+
+    def getDirectoriesInPath(self): 
+        rootdir = self.getPath()
+        L=[]
+        for rootdir, dirs, files in os.walk(rootdir):
+            for subdir in dirs:
+                L.append(os.path.join(rootdir, subdir))
+        return L
 
 
     def addFileName(self,filename=None):
@@ -642,7 +657,7 @@ if __name__=="__main__":
     print(AA.getPosition())
     AA.changeBaseName('a.txt')
     print(AA.getPosition())
-    AA.changeBaseName()
-    print(AA.getPosition())
+    AA.changePath('/data/tmp')
+    print(AA.getDirectoriesInPath())
 
 
