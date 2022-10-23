@@ -3,6 +3,7 @@ import os
 import json
 import tarfile
 import tempfile
+from typing import Tuple
 
 
 def createTemporaryPosition(fn='',tmp=None):
@@ -61,7 +62,10 @@ def readPkl(filename):
     return data
 
 def writePkl(filename,data=[]):
-        pickle.dump(data, filename)
+    if not ((isinstance(data,Tuple)) or (isinstance(data,Tuple) ) ):
+        data=[data]
+    with open(filename, 'wb') as file:
+        pickle.dump(data, file)
 
 class Node:
     def __init__(self,val) -> None:
@@ -338,7 +342,13 @@ import glob
 import mimetypes
 from pathlib import PurePath,Path
 class Pathable:
-    """extract info from a file position"""
+    """
+    extract info from a file position
+    Path:/data/
+    Basename:aa.txt
+    FileName:aa
+    Extension:txt
+    """
 
     def __init__(self, position):
         self.positionStack =Stack()
@@ -373,28 +383,21 @@ class Pathable:
 
     def getBaseName(self):
         return os.path.basename(self.getPosition())
-    
-    def getBaseNameWithoutExtension(self):
-        l=splitext_(os.path.basename(self.getPosition()))
-        return l[0]
+
 
     def getExtension(self):
         _, extension = splitext_(self.getPosition())
         return extension
 
     def getFileName(self):
-        return self.getBaseName()
+        l=splitext_(os.path.basename(self.getPosition()))
+        return l[0]    
     
-    def getFileNameWithoutExtension(self):
-        return self.getBaseNameWithoutExtension()
-
+    
     def getPosition(self):
         return self.positionStack.peek()
 
-    def getPositionWithPrefix(self, prefix):
-        N = self.getBaseName()
-        P = self.getPath()
-        return os.path.join(P, prefix + N)
+
     def setPosition(self,p):
         self.positionStack.push(p)
     def undo(self):
@@ -426,22 +429,14 @@ class Pathable:
     
     def changeBaseName(self,name=None):
         if not name:
-            raise Exception("no filename specified did you want to change basename randomly?")
+            raise Exception("no filename specified did you want to change basename randomly? use changeFileName")
         pt=self.getPath()
         self.setPosition(os.path.join(pt,name))
         return self
 
 
-    def changeRootBaseName(self,name):
-        return self.changeBaseNameWithoutExtension(name)
     
-    def changeRootFileName(self,name):
-        pt=self.getPath()
-        return self.changeFileNameWithoutExtension(name)
-    
-    
-
-    def changeBaseNameWithoutExtension(self,name=None):
+    def changeFileName(self,name=None):
         pt=self.getPath()
         E=self.getExtension()
         if not name:
@@ -451,11 +446,6 @@ class Pathable:
         self.setPosition(os.path.join(pt,name + '.' + E))
         return self
 
-    def changeFileName(self,name):
-        return self.changeBaseName(name)
-
-    def changeFileNameWithoutExtension(self,name=None):
-        return self.changeBaseNameWithoutExtension(name)
     
     def addSuffix(self,suf):
         return self.changePositionSuffixPrefix(suffix=suf)
@@ -480,12 +470,15 @@ class Pathable:
             EXT=O.getExtension()
             if EXT:
                 self.changeExtension(EXT)
-            self.changeBaseNameWithoutExtension()
-            return self 
-        return self.changeBaseNameWithoutExtension()
+            self.changeFileNameRandom()
+            return self
 
     def getDirectoriesInPath(self): 
-        rootdir = self.getPath()
+        if self.isFile():
+            rootdir = self.getPath()
+        else:
+            rootdir = self.getPosition()
+            
         L=[]
         for rootdir, dirs, files in os.walk(rootdir):
             for subdir in dirs:
@@ -493,14 +486,18 @@ class Pathable:
         return L
 
 
-    def addFileName(self,filename=None):
+    def addBaseName(self,filename=None):
         if self.isDir():
             if not filename:
                 filename=str(uuid.uuid4())+'.pathable'
             return self.setPosition(os.path.join(self.getPosition(),filename))
         elif self.isFile():
-            return self.changeFileName(filename)
+            return self.changeBaseName(filename)
         return self
+    
+    def reset(self):
+        while (self.positionStack.size()>1):
+            self.undo()
 
     
     def removeLastPath(self):
@@ -510,6 +507,12 @@ class Pathable:
         for t in path_split[1:-1]:
             p=os.path.join(p,t)
         return self.changePath(p)
+    
+    def getLastPath(self):
+        pt=self.getPath()
+        path_split = PurePath(pt).parts
+        p=path_split[-1]
+        return p
 
     def addPrefix(self,pre):
         if self.isFile():
@@ -521,28 +524,28 @@ class Pathable:
     
     def changePositionSuffixPrefix(self, suffix=None,prefix=None):
         if self.isFile():
-            N = self.getBaseNameWithoutExtension()
+            N = self.getFileName()
             E = self.getExtension()
             if E[0]== '.':
                 ext=ext[1:] 
             if suffix:
                 o=self.changeBaseName(N + suffix + '.' + E)
-                N = self.getBaseNameWithoutExtension()
+                N = self.getFileName()
             if prefix:
                 o=self.changeBaseName(prefix + N +'.' + E)
             return o
 
     def changeExtension(self,ext):
         if self.isFile():
-            N = self.getBaseNameWithoutExtension()
+            N = self.getFileName()
             E = self.getExtension()
             if ext[0]== '.':
                 ext=ext[1:] 
             return self.changeBaseName(N+"."+ext)
         
-    def changeBaseNameWithoutExtensionRandom(self):
+    def changeFileNameRandom(self):
         if self.isFile():
-            return self.changeBaseNameWithoutExtension()
+            return self.changeFileName()
     
     def ensureDirectoryExistence(self):
         try:
@@ -653,11 +656,13 @@ class Pathable:
 if __name__=="__main__":
 
     AA=createTemporaryPathableDirectory()
-    AA.addFileName()
+    AA.addBaseName()
     print(AA.getPosition())
     AA.changeBaseName('a.txt')
     print(AA.getPosition())
     AA.changePath('/data/tmp')
     print(AA.getDirectoriesInPath())
+    AA.appendPath('last')
+    print(AA.getLastPath())
 
 
