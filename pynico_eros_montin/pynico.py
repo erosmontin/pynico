@@ -4,8 +4,10 @@ import json
 import tarfile
 import tempfile
 from typing import Tuple
+import copy
 
-
+def forkPathable(x):
+    return copy.deepcopy(x)
 def createTemporaryPosition(fn='',tmp=None):
     if not tmp:
         tmp = tempfile.gettempdir()
@@ -13,7 +15,7 @@ def createTemporaryPosition(fn='',tmp=None):
 
 def createRandomTemporaryPathableFromFileName(fn,tmp=None):    
     P=Pathable(createTemporaryPosition(fn,tmp))
-    P.changeBaseNameSafe()
+    P=Pathable(P.changeBaseNameSafe().getPosition())
     P.ensureDirectoryExistence()
     return P
 
@@ -400,6 +402,7 @@ class Pathable:
 
     def setPosition(self,p):
         self.positionStack.push(p)
+        return self
     def undo(self):
         if self.positionStack.size()>1:
             return self.positionStack.pop()
@@ -443,8 +446,8 @@ class Pathable:
             name=str(uuid.uuid4())
         if E[0]== '.':
             E=E[1:] 
-        self.setPosition(os.path.join(pt,name + '.' + E))
-        return self
+        return self.setPosition(os.path.join(pt,name + '.' + E))
+        
 
     
     def addSuffix(self,suf):
@@ -470,8 +473,8 @@ class Pathable:
             EXT=O.getExtension()
             if EXT:
                 self.changeExtension(EXT)
-            self.changeFileNameRandom()
-            return self
+        return self.changeFileName()
+    
 
     def getDirectoriesInPath(self): 
         if self.isFile():
@@ -487,9 +490,9 @@ class Pathable:
 
 
     def addBaseName(self,filename=None):
-        if self.isDir():
-            if not filename:
+        if not filename:
                 filename=str(uuid.uuid4())+'.pathable'
+        if self.isDir():
             return self.setPosition(os.path.join(self.getPosition(),filename))
         elif self.isFile():
             return self.changeBaseName(filename)
@@ -655,7 +658,7 @@ class Pathable:
 
 if __name__=="__main__":
 
-    AA=createTemporaryPathableDirectory()
+    AA=createRandomTemporaryPathableFromFileName('a.txt')
     AA.addBaseName()
     print(AA.getPosition())
     AA.changeBaseName('a.txt')
@@ -664,5 +667,10 @@ if __name__=="__main__":
     print(AA.getDirectoriesInPath())
     AA.appendPath('last')
     print(AA.getLastPath())
+
+    B=forkPathable(AA)
+    print(B.getLastPath())
+    print(B.getPosition())
+
 
 

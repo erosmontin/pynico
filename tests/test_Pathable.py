@@ -3,7 +3,8 @@ from pynico_eros_montin import pynico as me
 
 # thestring=me.createTemporaryPosition('oo.nii.gz')
 # print(f'the original file {thestring}')
-A=me.createTemporaryPathableFromFileName('oo.nii.gz')
+A=me.createRandomTemporaryPathableFromFileName('oo.nii.gz',None)
+
 print(A.getPosition())
 
 print(A.isFile())
