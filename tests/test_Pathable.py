@@ -53,3 +53,7 @@ A.undo(), print(A.getPosition())
 A.undo(), print(A.getPosition())
 A.undo(), print(A.getPosition())
 A.reset(), print(A.getPosition())
+
+
+print(me.isCollection(A.getPosition()))
+print(me.isCollection([A.getPosition()]))
