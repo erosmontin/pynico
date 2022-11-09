@@ -59,11 +59,13 @@ def readCsv(filename):
         while line := f.readline():
             F.append(line)
 
+
 import pickle
 
 def readPkl(filename):
-    with open(filename) as f:
+    with open(filename,'rb') as f:
         data = pickle.load(f)
+    f.close()
     return data
 
 def writePkl(filename,data=[]):
@@ -71,7 +73,7 @@ def writePkl(filename,data=[]):
         data=[data]
     with open(filename, 'wb') as file:
         pickle.dump(data, file)
-
+    file.close()
 class Node:
     def __init__(self,val) -> None:
         self.value=val
