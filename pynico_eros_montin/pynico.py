@@ -55,9 +55,11 @@ def writeJsonFile(filename,data):
 
 def readCsv(filename):
     F=[]
-    with open(filename) as f:
-        while line := f.readline():
+    with open(filename,'r') as f:
+        csvreader = csv.reader(f)
+        for line in csvreader:
             F.append(line)
+    return F
 
 
 import pickle
