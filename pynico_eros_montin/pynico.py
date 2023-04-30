@@ -5,7 +5,7 @@ import tarfile
 import tempfile
 from typing import Tuple
 import copy
-
+import csv
 def isCollection(h):
     return  (isinstance(h,tuple) or isinstance(h,list) or isinstance(h,set))
 
