@@ -393,7 +393,12 @@ class Pathable:
     def getBaseName(self):
         return os.path.basename(self.getPosition())
 
+    def fork(self):
+        return forkPathable(self)
 
+    def duplicate(self):
+        return (self)
+    
     def getExtension(self):
         _, extension = splitext_(self.getPosition())
         return extension
