@@ -502,7 +502,7 @@ class Pathable:
         L=[]
         if not recursive:
             for d in os.listdir(rootdir):
-                L.append(os.join(rootdir,d))
+                L.append(os.path.join(rootdir,d))
         else:
             for rootdir, dirs, files in os.walk(rootdir):
                 for subdir in dirs:
