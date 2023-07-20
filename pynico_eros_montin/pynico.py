@@ -500,11 +500,13 @@ class Pathable:
             rootdir = self.getPosition()
             
         L=[]
-        for rootdir, dirs, files in os.walk(rootdir):
-            for subdir in dirs:
-                L.append(os.path.join(rootdir, subdir))
-            if not recursive:
-                break
+        if not recursive:
+            for d in os.listdir(rootdir):
+                L.append(os.join(rootdir,d))
+        else:
+            for rootdir, dirs, files in os.walk(rootdir):
+                for subdir in dirs:
+                    L.append(os.path.join(rootdir, subdir))
             
         return L
 
