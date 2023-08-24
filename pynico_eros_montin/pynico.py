@@ -489,26 +489,31 @@ class Pathable:
     
 
     def getDirectoriesInPath(self,recursive=False):         
-        """Get a list of the directories in Path
+            """Get a list of the directories in Path
 
-        Args:
-            - mrecursive (bool): do you want to walk inside all your directories
-        """        
-        if self.isFile():
-            rootdir = self.getPath()
-        else:
-            rootdir = self.getPosition()
-            
-        L=[]
-        if not recursive:
-            for d in os.listdir(rootdir):
-                L.append(os.path.join(rootdir,d))
-        else:
-            for rootdir, dirs, files in os.walk(rootdir):
-                for subdir in dirs:
-                    L.append(os.path.join(rootdir, subdir))
-            
-        return L
+            Args:
+                - mrecursive (bool): do you want to walk inside all your directories
+            """        
+            if self.isFile():
+                rootdir = self.getPath()
+            else:
+                rootdir = self.getPosition()
+                
+            L=[]
+            if not recursive:
+                for d in os.listdir(rootdir):
+                    F=os.path.join(rootdir,d)
+                    if not (os.path.isfile(F)):
+                        L.append(F)
+            else:
+                for rootdir, dirs, files in os.walk(rootdir):
+                    for subdir in dirs:
+                        F=os.path.join(rootdir, subdir)
+                        if not (os.path.isfile(F)):
+                            L.append(F)
+                        
+                
+            return L
 
 
     def addBaseName(self,filename=None):
