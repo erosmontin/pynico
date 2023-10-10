@@ -387,8 +387,8 @@ class Pathable:
         return (os.path.isdir(pt) or os.path.isfile(pt))
     
     def getPath(self):
-        file_name, *_= splitext_(self.getPosition())
-        return os.path.dirname(file_name)
+        [PT,L]=os.path.split(self.getPosition())
+        return PT
 
     def getBaseName(self):
         return os.path.basename(self.getPosition())
@@ -685,19 +685,22 @@ class Pathable:
 
 if __name__=="__main__":
 
-    AA=createRandomTemporaryPathableFromFileName('a.txt')
-    AA.addBaseName()
-    print(AA.getPosition())
-    AA.changeBaseName('a.txt')
-    print(AA.getPosition())
-    AA.changePath('/data/tmp')
-    print(AA.getDirectoriesInPath())
-    AA.appendPath('last')
-    print(AA.getLastPath())
+    # AA=createRandomTemporaryPathableFromFileName('a.txt')
+    # AA.addBaseName()
+    # print(AA.getPosition())
+    # AA.changeBaseName('a.txt')
+    # print(AA.getPosition())
+    # AA.changePath('/data/tmp')
+    # print(AA.getDirectoriesInPath())
+    # AA.appendPath('last')
+    # print(AA.getLastPath())
 
-    B=forkPathable(AA)
-    print(B.getLastPath())
-    print(B.getPosition())
+    # B=forkPathable(AA)
+    # print(B.getLastPath())
+    # print(B.getPosition())
+
+    A=Pathable('/aa/f.31/aa/ff/a.zip')
+    print(A.getPath())
 
 
 
