@@ -237,7 +237,7 @@ class BashIt:
             process = subprocess.Popen(bashCommand.split(), stdout=subprocess.PIPE)
             self.Log.append(f'running {bashCommand}')
             self.output, self.error = process.communicate()
-            if not self.error:
+            if self.error is not None:
                 process = subprocess.Popen(bashCommand, stdout=subprocess.PIPE,shell=True)
                 self.output, self.error = process.communicate()
             self.Log.append(f'completed {bashCommand}')
