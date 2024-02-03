@@ -125,16 +125,23 @@ class Log:
         - dededede
     """    
   
-    def __init__(self,init=None):
+    def __init__(self,firstmessage=None,settings=None):
+        """_summary_
+
+        Args:
+            firstmessage (_type_, optional): "ddd", Defaults to None.
+            settings (_type_, optional): {"De":0,"De2":0}. Defaults to None.
+        """
         self.format="%d/%m/%Y, %H:%M:%S"
         self.now=datetime.datetime.now()
         self.version='v0.0v'
         self.dflts='procedure'
         self.dflte='ERROR'
-        if init is None:
-            init="Log (" + self.version + ")"
-
-        self.log=[{"when":self.getFormattedDatetime(self.now),"what":init,"type":"start","settings":{"author":"Eros Montin","mail":"eros.montin@gmail.com","motto":"Forty-six and two are just ahead of me"}}]
+        if firstmessage is None:
+            firstmessage="init log"
+        if settings is None:
+            settings={"author":"Eros Montin","mail":"eros.montin@gmail.com","motto":"Forty-six and two are just ahead of me"}
+        self.log=[{"when":self.getFormattedDatetime(self.now),"what":firstmessage,"type":"start","settings":settings,"version":self.version}]
     def setTimeFormat(self,f):
         self.format=f
         #  should validate this at some point TODO
