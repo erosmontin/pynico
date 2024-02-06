@@ -5,7 +5,16 @@ import tarfile
 import tempfile
 from typing import Tuple
 import copy
+
 import csv
+
+import pkg_resources
+def getPackageVersion(pkg='pynico_eros_montin'):
+    try:
+        return pkg_resources.get_distribution(pkg).version
+    except:
+        return None
+    
 def isCollection(h):
     return  (isinstance(h,tuple) or isinstance(h,list) or isinstance(h,set))
 
