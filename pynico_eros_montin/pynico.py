@@ -15,7 +15,7 @@ def getPackageVersion(pkg='pynico_eros_montin'):
     except:
         return None
 
-def getPakagesVersion(PKG=['cloudmrhub','pynico_eros_montin','cmrawspy','pygrappa','twixtools','numpy','scipy','matplotlib','pydicom','SimpleITK','PIL','pyable_eros_montin'] ):
+def getPackagesVersion(PKG=['cloudmrhub','pynico_eros_montin','cmrawspy','pygrappa','twixtools','numpy','scipy','matplotlib','pydicom','SimpleITK','PIL','pyable_eros_montin'] ):
     return [{r:getPackageVersion(r)} for r in PKG]
 
 def isCollection(h):
