@@ -15,8 +15,45 @@ def getPackageVersion(pkg='pynico_eros_montin'):
     except:
         return None
 
+
 def getPackagesVersion(PKG=['cloudmrhub','pynico_eros_montin','cmrawspy','pygrappa','twixtools','numpy','scipy','matplotlib','pydicom','SimpleITK','PIL','pyable_eros_montin'] ):
     return [{r:getPackageVersion(r)} for r in PKG]
+
+import hashlib
+import shutil
+
+def calculateMd5(file_path):
+    hasher = hashlib.md5()
+    with open(file_path, 'rb') as afile:
+        buf = afile.read()
+        hasher.update(buf)
+    return hasher.hexdigest()
+
+
+import time
+import os
+import shutil
+def securecopy(imagefilename,new_imagefilename,max_attempts=4,md5=None,delete_after_copy=False,foollow_symlinks=False):
+    # check the md5 of the file, copy the file to the new path, after check if the md5 is the same 
+    if md5 is None:
+        md5 =calculateMd5(imagefilename)
+    while max_attempts > 0:
+        shutil.copy2(imagefilename, new_imagefilename, follow_symlinks=foollow_symlinks)
+        os.sync()
+        time.sleep(1)
+        if md5 == calculateMd5(new_imagefilename):
+            OUT={"status":"ok","message":"file copied"}
+            if delete_after_copy:
+                os.remove(imagefilename)
+                os.sync()
+                time.sleep(1)
+            OUT["md5"]=md5
+            break
+        else:
+            max_attempts -= 1
+            OUT={"status":"error","message":"file not copied"}
+        
+    return OUT
 
 def isCollection(h):
     return  (isinstance(h,tuple) or isinstance(h,list) or isinstance(h,set))
