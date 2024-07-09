@@ -335,14 +335,12 @@ class GarbageCollector(object):
         while len(self):
             a = self.undo()
             try:
-                with os.scandir(a) as it:
-                    for entry in it:
-                        if entry.is_file():
-                            os.remove(entry.path)
-                        elif entry.is_dir():
-                            shutil.rmtree(entry.path)
+                if os.path.isfile(a):
+                    os.remove(a)
+                elif os.path.isdir(a):
+                    shutil.rmtree(a)
                 if self.verbose:
-                    print(f'{a} removed')
+                            print(f'{a} removed')
             except FileNotFoundError:
                 if self.verbose:
                     print(f'{a} does not exist')
@@ -802,6 +800,11 @@ if __name__=="__main__":
     G=GarbageCollector()
     G.throw(A.getPosition())
     G.throw(A.getPath())
+    
+    import os
+    sss="/tmp/aaaaaa"
+    os.makedirs(sss, exist_ok=True)
+    G.throw(sss)
     G.trash()
 
     
