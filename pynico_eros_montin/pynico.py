@@ -317,27 +317,53 @@ class BashIt:
 
 
 import os
+import stat
 class GarbageCollector(object):
     def __init__(self) -> None:
         self.trashbin=Stack() #list of trash
+        self.force=False
+        self.verbose=False
     def __len__(self):
         return self.trashbin.size()
 
-    def trash(self):
+    def setVerbose(self):
+        self.verbose=True
+    def setNoVerbose(self):
+        self.verbose=False
         
+    def trash(self):
         while len(self):
-            a=self.undo()
+            a = self.undo()
             try:
-                if os.path.isfile(a):
-                    os.remove(a)
-                elif os.path.isdir(a):
-                    os.rmdir(a)
+                with os.scandir(a) as it:
+                    for entry in it:
+                        if entry.is_file():
+                            os.remove(entry.path)
+                        elif entry.is_dir():
+                            shutil.rmtree(entry.path)
+                if self.verbose:
+                    print(f'{a} removed')
+            except FileNotFoundError:
+                if self.verbose:
+                    print(f'{a} does not exist')
+            except PermissionError:
+                if self.force:
+                    try:
+                        os.chmod(a, stat.S_IWUSR)  # Change the file permissions
+                        shutil.rmtree(a)
+                        if self.verbose:
+                            print(f'{a} removed')
+                    except Exception as e:
+                        if self.verbose:
+                            print(f'nope! {a} was not removed. Reason: {str(e)}')
                 else:
-                    raise Exception("what's that??")
-                
-                print(f'{a} removed')
-            except:
-                print(f'nope! {a} was not removed')
+                    if self.verbose:
+                        print(f'nope! {a} was not removed due to insufficient permissions')
+
+
+            else:
+                if self.verbose:
+                    print(f'{a} does not exist')                
 
     def __del__(self):
         self.trash()
@@ -355,10 +381,22 @@ class GarbageCollector(object):
     def append(self,f):
         #just an alias
         self.throw(f)
+    def setForce(self):
+        self.force=True
+
+    def setNoForce(self):
+        self.force=False
+
+    def isForce(self):
+        return self.force
+
+
+
+class SudoGarbageCollector(GarbageCollector):
+    def __init__(self) -> None:
+        super().__init__()
+        self.force=True
     
-
-
-
 import time
 class Timer():  
     """_summary_
@@ -759,8 +797,14 @@ if __name__=="__main__":
     # print(B.getLastPath())
     # print(B.getPosition())
 
-    A=Pathable('/aa/f.31/aa/ff/a.zip')
-    print(A.getPath())
+    A=Pathable('/tmp/fff/a.zip')
+    A.ensureDirectoryExistence()
+    G=GarbageCollector()
+    G.throw(A.getPosition())
+    G.throw(A.getPath())
+    G.trash()
+
+    
 
 
 
