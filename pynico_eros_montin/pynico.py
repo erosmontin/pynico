@@ -60,6 +60,7 @@ def isCollection(h):
 
 def forkPathable(x):
     return copy.deepcopy(x)
+
 def createTemporaryPosition(fn='',tmp=None):
     if not tmp:
         tmp = tempfile.gettempdir()
@@ -490,10 +491,21 @@ class Pathable:
         return os.path.basename(self.getPosition())
 
     def fork(self):
+        """
+        fork the current pathable
+
+        Returns:
+            _type_: _description_
+        """
         return forkPathable(self)
 
     def duplicate(self):
-        return (self)
+        """alias for fork
+
+        Returns:
+            _type_: _description_
+        """
+        return self.fork()
     
     def getExtension(self):
         _, extension = splitext_(self.getPosition())
@@ -775,9 +787,25 @@ class Pathable:
     
 
 
+import os
+import platform
+def checkDirEndsWithSlash(_dir):
+    # Ensure image_dir ends with a separator
+    if not _dir.endswith(os.path.sep):
+        _dir += os.path.sep
+    return _dir
 
-
-
+def getPlatformInfo():
+    return {
+        "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "os": platform.system(),
+        "os_version": platform.version(),
+        "machine": platform.machine(),
+        "processor": platform.processor(),
+        "python_version": platform.python_version(),
+        "hostname": platform.node(),
+        "user": os.getlogin()
+    }
 
 if __name__=="__main__":
 
