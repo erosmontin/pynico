@@ -398,23 +398,23 @@ class SudoGarbageCollector(GarbageCollector):
     
 import time
 class Timer():  
-    """_summary_
-    frfrfr
-    frfrfr
-    frfrfr
-    frfrfr
-    """    
+    """
+    A simple timer class.
+    
+    """
     def __init__(self):
         self.times = []
         self.start()
+        self.hdr=None
 
-    def start(self):
+    def start(self,message=None):
         """Start the timer."""
         self.tik = time.time()
+        self.hdr=message
 
-    def stop(self):
+    def stop(self,m=None):
         """Stop the timer and record the time in a list."""
-        self.times.append(time.time() - self.tik)
+        self.times.append({"time":time.time() - self.tik,"message":m})
         return self.times[-1]
 
     def avg(self):
@@ -428,6 +428,17 @@ class Timer():
     def getStops(self):
         """Return the stops time."""
         return self.times
+
+    def show(self):
+        """Print the stops time."""
+        for t in self.times:
+            print(t)    
+    def toJson(self,filename):
+        O= json.dumps(self.times)
+        if filename:
+            A=Pathable(filename)
+            A.writeJson({"hdr":self.hdr,"times":self.times})
+        return O
 
 def splitext_(path):
     if len(path.split('.')) > 1:
