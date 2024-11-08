@@ -5,20 +5,20 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pynico_eros_montin"
-version = "0.2.3"
+version = "0.2.3.1"
 authors = [
   { name="Dr. Eros Montin, PhD", email="eros.montin@gmail.com" },
 ]
 changes = "CHANGES.md"
 description = "Handy things you need, at least i do"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.3"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-
+dependencies = ["setuptools"]
 [project.urls]
 "Homepage" = "https://github.com/erosmontin/pynico"
 "Bug Tracker" = "https://github.com/erosmontin/pynico/issues"
