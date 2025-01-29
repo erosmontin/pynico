@@ -6,6 +6,21 @@ import tempfile
 from typing import Tuple
 import copy
 
+
+
+def sanitize_for_json(data):
+    """Recursively sanitize data to make it JSON serializable."""
+    if isinstance(data, dict):
+        return {k: sanitize_for_json(v) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_for_json(v) for v in data]
+    elif isinstance(data, (int, float, str, bool, type(None))):
+        return data
+    else:
+        return str(data)  # Convert non-serializable types to strings
+
+
+
 import csv
 
 import pkg_resources
@@ -99,9 +114,12 @@ def readJson(filename):
         data = json.load(f)
     return data
 
+import copy
 def writeJsonFile(filename,data):
+    _data=copy.deepcopy(data)
+    _data=sanitize_for_json(_data)
     with open(filename, 'w') as outfile:
-        json.dump(data, outfile)
+        json.dump(_data, outfile)
 
 def readCsv(filename):
     F=[]
