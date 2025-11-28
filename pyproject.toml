@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 
 [project]
-name = "pynico_eros_montin"
+name = "pynico"
 version = "0.2.3.2"
 authors = [
   { name="Dr. Eros Montin, PhD", email="eros.montin@gmail.com" },
