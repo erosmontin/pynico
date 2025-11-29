@@ -285,21 +285,94 @@ class Log:
         for l in L:
             self.log.append(l)
         return True
+    
+    def mergeLog(self, log_source, log_name=None):
+        """Merge an entire log into this log with an optional namespace.
         
+        Each entry from the source log will be stored with a 'log_name' field
+        to allow filtering by log source later.
+        
+        Args:
+            log_source: Either a Log object, a list of log entries, or a filename (str) containing JSON log data
+            log_name (str, optional): Name/namespace for this log source. If None, no namespace is added.
+        
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        # Get the log entries from the source
+        if isinstance(log_source, str):
+            try:
+                entries = readJson(log_source)
+            except:
+                return False
+        elif isinstance(log_source, Log):
+            entries = log_source.getLog()
+        elif isinstance(log_source, list):
+            entries = log_source
+        else:
+            return False
+        
+        # Append each entry with the log_name namespace
+        for entry in entries:
+            entry_copy = copy.deepcopy(entry)
+            if log_name is not None:
+                entry_copy['log_name'] = log_name
+            self.log.append(entry_copy)
+        
+        return True
+    
+    def getLogByName(self, log_name):
+        """Retrieve all log entries for a specific log name/namespace.
+        
+        Args:
+            log_name (str): The name/namespace of the log to retrieve
+        
+        Returns:
+            list: List of log entries matching the given log_name
+        """
+        return [entry for entry in self.log if entry.get('log_name') == log_name]
+    
+    def getLogNames(self):
+        """Get all unique log names/namespaces in this log.
+        
+        Returns:
+            list: List of unique log_name values found in the log entries
+        """
+        names = set()
+        for entry in self.log:
+            if 'log_name' in entry:
+                names.add(entry['log_name'])
+        return sorted(list(names))
 
     def getWhatHappened(self):
         self.printWhatHappened()
 
-    def printWhatHappened(self):
-        """print the events logged
-        """        
-        for l in self.log:
-            print(l)
-    
-    def getLog(self):
-        """gett the events logged
+    def printWhatHappened(self, log_name=None):
+        """Print the events logged.
+        
+        Args:
+            log_name (str, optional): If provided, only print entries from this log name/namespace
         """
-        return self.log
+        if log_name is None:
+            for l in self.log:
+                print(l)
+        else:
+            for l in self.getLogByName(log_name):
+                print(l)
+    
+    def getLog(self, log_name=None):
+        """Get the events logged.
+        
+        Args:
+            log_name (str, optional): If provided, only return entries from this log name/namespace
+        
+        Returns:
+            list: List of log entries (filtered by log_name if provided)
+        """
+        if log_name is None:
+            return self.log
+        else:
+            return self.getLogByName(log_name)
     
     def writeLogAs(self,fn):
         try:
