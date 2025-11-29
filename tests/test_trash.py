@@ -1,35 +1,31 @@
-# import tmpme as me
-from pynico_eros_montin import pynico as me
+from pynico import pynico as me
 
 
-G=me.GarbageCollector()
+def test_garbagecollector_trash(tmp_path):
+    G = me.GarbageCollector()
+    base = tmp_path / "trashdir"
+    base.mkdir()
+    file_a = base / "a.json.tar.gz"
+    file_a.write_text("content", encoding="utf-8")
+    A = me.Pathable(str(file_a))
+    for t in range(3):
+        A.addSuffix(str(t))
+        A.touch()
+        G.throw(A.getPosition())
+        A.undo()
+    G.throw(A.getPath())
+    G.trash()
+    assert not file_a.exists()
+    assert not base.exists()
 
 
-thestring='/tmp/g/a.json.tar.gz'
-A=me.Pathable(thestring)
-for t in range(5):
-    A.addSuffix(str(t))
+def test_change_base_name_safe_and_Temporary(tmp_path):
+    A = me.Pathable(str(tmp_path / "a.json.tar.gz"))
+    A.addSuffix("1")
     A.touch()
-    G.throw(A.getPosition())
-    A.undo()
-G.throw(A.getPath())
-G.trash()
-
-
-
-L=[]
-for t in range(55):
-    A.addSuffix(str(t))
-    A.touch()
-    L.append(A.getPosition())
-    # G.throw(A.getPosition())
-    A.undo()
-
-A.changeBaseNameSafe('a.txt')
-print(A.getPosition())
-
-AA=me.PathableTemp('')
-AA.changePathToSafePath()
-
-AA.changeBaseNameSafe('a.txt')
-print(AA.getPosition())
+    A.changeBaseNameSafe("a.txt")
+    assert A.getExtension() == "txt"
+    AA = me.createTemporaryPathableFromFileName("tmp.txt")
+    AA.changePathToSafePath()
+    AA.changeBaseNameSafe("a.txt")
+    assert AA.getExtension() == "txt"

@@ -3,12 +3,31 @@ import os
 import json
 import tarfile
 import tempfile
-from typing import Tuple
+from typing import Tuple, List, Union, Any, Optional
 import copy
+import csv
+import hashlib
+import shutil
+import time
+import subprocess
+import shlex
+import stat
+import uuid
+import glob
+import mimetypes
+from pathlib import PurePath, Path
+import platform
+import getpass
+import collections.abc
+import pickle
+
+try:
+    from importlib.metadata import version
+except ImportError:
+    from importlib_metadata import version
 
 
-
-def sanitize_for_json(data):
+def sanitize_for_json(data: Any) -> Any:
     """Recursively sanitize data to make it JSON serializable."""
     if isinstance(data, dict):
         return {k: sanitize_for_json(v) for k, v in data.items()}
@@ -20,161 +39,162 @@ def sanitize_for_json(data):
         return str(data)  # Convert non-serializable types to strings
 
 
-
-import csv
-
-import pkg_resources
-def getPackageVersion(pkg='pynico_eros_montin'):
+def getPackageVersion(pkg: str = 'pynico') -> Optional[str]:
     try:
-        return pkg_resources.get_distribution(pkg).version
-    except:
+        return version(pkg)
+    except Exception:
         return None
 
 
-def getPackagesVersion(PKG=['cloudmrhub','pynico_eros_montin','cmrawspy','pygrappa','twixtools','numpy','scipy','matplotlib','pydicom','SimpleITK','PIL','pyable_eros_montin'] ):
-    return [{r:getPackageVersion(r)} for r in PKG]
+def getPackagesVersion(PKG: List[str] = ['cloudmrhub','pynico','cmrawspy','pygrappa','twixtools','numpy','scipy','matplotlib','pydicom','SimpleITK','PIL']) -> dict:
+    return {r: getPackageVersion(r) for r in PKG}
 
-import hashlib
-import shutil
 
-def calculateMd5(file_path):
+def calculateMd5(file_path: str, chunk_size: int = 8192) -> str:
     hasher = hashlib.md5()
     with open(file_path, 'rb') as afile:
-        buf = afile.read()
-        hasher.update(buf)
+        while chunk := afile.read(chunk_size):
+            hasher.update(chunk)
     return hasher.hexdigest()
 
 
-import time
-import os
-import shutil
-def securecopy(imagefilename,new_imagefilename,max_attempts=4,md5=None,delete_after_copy=False,foollow_symlinks=False):
-    # check the md5 of the file, copy the file to the new path, after check if the md5 is the same 
+def securecopy(imagefilename: str, new_imagefilename: str, max_attempts: int = 4, md5: Optional[str] = None, delete_after_copy: bool = False, follow_symlinks: bool = False) -> dict:
+    """Securely copy a file with MD5 verification."""
     if md5 is None:
-        md5 =calculateMd5(imagefilename)
-    while max_attempts > 0:
-        shutil.copy2(imagefilename, new_imagefilename, follow_symlinks=foollow_symlinks)
-        os.sync()
-        time.sleep(1)
-        if md5 == calculateMd5(new_imagefilename):
-            OUT={"status":"ok","message":"file copied"}
-            if delete_after_copy:
-                os.remove(imagefilename)
-                os.sync()
-                time.sleep(1)
-            OUT["md5"]=md5
-            break
-        else:
-            max_attempts -= 1
-            OUT={"status":"error","message":"file not copied"}
-        
-    return OUT
+        md5 = calculateMd5(imagefilename)
+    for attempt in range(max_attempts):
+        try:
+            shutil.copy2(imagefilename, new_imagefilename, follow_symlinks=follow_symlinks)
+            with open(new_imagefilename, 'rb') as f:
+                os.fdatasync(f.fileno())  # Ensure data is written
+            if md5 == calculateMd5(new_imagefilename):
+                result = {"status": "ok", "message": "file copied", "md5": md5}
+                if delete_after_copy:
+                    os.remove(imagefilename)
+                    with open(new_imagefilename, 'rb') as f:
+                        os.fdatasync(f.fileno())
+                return result
+        except Exception as e:
+            if attempt == max_attempts - 1:
+                return {"status": "error", "message": f"file not copied after {max_attempts} attempts: {str(e)}"}
+    return {"status": "error", "message": "file not copied"}
 
-def isCollection(h):
-    return  (isinstance(h,tuple) or isinstance(h,list) or isinstance(h,set))
+
+def isCollection(h: Any) -> bool:
+    return isinstance(h, collections.abc.Collection) and not isinstance(h, (str, bytes, bytearray))
+
 
 def forkPathable(x):
     return copy.deepcopy(x)
 
-def createTemporaryPosition(fn='',tmp=None):
+
+def createTemporaryPosition(fn: str = '', tmp: Optional[str] = None) -> str:
     if not tmp:
         tmp = tempfile.gettempdir()
-    return os.path.join(tmp,fn)
+    return os.path.join(tmp, fn)
 
-def createRandomTemporaryPathableFromFileName(fn,tmp=None):    
-    P=Pathable(createTemporaryPosition(fn,tmp))
-    P=Pathable(P.changeBaseNameSafe().getPosition())
+
+def createRandomTemporaryPathableFromFileName(fn: str, tmp: Optional[str] = None):
+    P = Pathable(createTemporaryPosition(fn, tmp))
+    P = Pathable(P.changeBaseNameSafe().getPosition())
     P.ensureDirectoryExistence()
     return P
 
-def createTemporaryPathableFromFileName(fn,tmp=None):    
-    P=Pathable(createTemporaryPosition(fn,tmp))
+
+def createTemporaryPathableFromFileName(fn: str, tmp: Optional[str] = None):
+    P = Pathable(createTemporaryPosition(fn, tmp))
     P.ensureDirectoryExistence()
     return P
-def createTemporaryPathableDirectory(tmp=None):    
+
+
+def createTemporaryPathableDirectory(tmp: Optional[str] = None):
     if not tmp:
         tmp = createTemporaryPosition()
-    P=Pathable(tmp)
+    P = Pathable(tmp)
     P.appendPathRandom()
     P.ensureDirectoryExistence()
     return P
-        
-def unTarGz(fname):
-    tar = tarfile.open(fname, "r:gz")
-    tar.extractall()
-    tar.close()
 
-def unTar(fname):
-    tar = tarfile.open(fname, "r:")
-    tar.extractall()
-    tar.close()
 
-def readJson(filename):
+def unTarGz(fname: str, extract_path: Optional[str] = None) -> None:
+    if extract_path is None:
+        extract_path = tempfile.mkdtemp()
+    with tarfile.open(fname, "r:gz") as tar:
+        tar.extractall(extract_path)
+
+
+def unTar(fname: str, extract_path: Optional[str] = None) -> None:
+    if extract_path is None:
+        extract_path = tempfile.mkdtemp()
+    with tarfile.open(fname, "r:") as tar:
+        tar.extractall(extract_path)
+
+
+def readJson(filename: str) -> Any:
     with open(filename) as f:
-        data = json.load(f)
-    return data
+        return json.load(f)
 
-import copy
-def writeJsonFile(filename,data):
-    _data=copy.deepcopy(data)
-    _data=sanitize_for_json(_data)
+
+def writeJsonFile(filename: str, data: Any) -> None:
+    _data = copy.deepcopy(data)
+    _data = sanitize_for_json(_data)
     with open(filename, 'w') as outfile:
         json.dump(_data, outfile)
 
-def readCsv(filename):
-    F=[]
-    with open(filename,'r') as f:
-        csvreader = csv.reader(f)
-        for line in csvreader:
-            F.append(line)
-    return F
+
+def readCsv(filename: str) -> List[List[str]]:
+    with open(filename, 'r') as f:
+        return list(csv.reader(f))
 
 
-import pickle
+def readPkl(filename: str) -> Any:
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
 
-def readPkl(filename):
-    with open(filename,'rb') as f:
-        data = pickle.load(f)
-    f.close()
-    return data
 
-def writePkl(filename,data=[]):
-    if not ((isinstance(data,Tuple)) or (isinstance(data,Tuple) ) ):
-        data=[data]
+def writePkl(filename: str, data: Any) -> None:
+    if not isinstance(data, (list, tuple)):
+        data = [data]
     with open(filename, 'wb') as file:
         pickle.dump(data, file)
-    file.close()
+
+
 class Node:
-    def __init__(self,val) -> None:
-        self.value=val
-        self.next=None
+    def __init__(self, val) -> None:
+        self.value = val
+        self.next = None
+
 
 class Stack:
     def __init__(self) -> None:
-        self.top =None
-        self.stackSize=0
+        self.top = None
+        self.stackSize = 0
     
-    def push(self,val):
+    def push(self, val):
         node = Node(val)
         node.next = self.top
-        self.top= node
-        self.stackSize+=1
+        self.top = node
+        self.stackSize += 1
     
     def pop(self):
         if self.top:
-            value= self.top.value
+            value = self.top.value
             self.top = self.top.next
-            self.stackSize-=1
+            self.stackSize -= 1
             return value
         else:
-            raise Exception('Stack is empty')    
+            raise IndexError('pop from empty stack')
         
     def peek(self):
         if self.top:
             return self.top.value
         else:
-            raise Exception('stack is empty')
+            raise IndexError('peek from empty stack')
+    
     def size(self):
+        return self.stackSize
+    
+    def __len__(self):
         return self.stackSize
 
 
@@ -390,7 +410,9 @@ class GarbageCollector(object):
         else:
             return None
     def peek(self):
-        return self.trashbin.pop()
+        if self.trashbin.top:
+            return self.trashbin.top.value
+        return None
 
     def throw(self,f):
         self.trashbin.push(f)
@@ -693,8 +715,8 @@ class Pathable:
         if self.isFile():
             N = self.getFileName()
             E = self.getExtension()
-            if E[0]== '.':
-                ext=ext[1:] 
+            if E and E.startswith('.'):
+                E = E[1:]
             if suffix:
                 o=self.changeBaseName(N + suffix + '.' + E)
                 N = self.getFileName()
@@ -833,7 +855,7 @@ def getPlatformInfo():
         "processor": platform.processor(),
         "python_version": platform.python_version(),
         "hostname": platform.node(),
-        "user": os.getlogin()
+        "user": getpass.getuser()
     }
 
 if __name__=="__main__":
