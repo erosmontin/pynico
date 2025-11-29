@@ -931,6 +931,291 @@ def getPlatformInfo():
         "user": getpass.getuser()
     }
 
+
+class SlurmScript:
+    """Create and manage SLURM batch scripts.
+    
+    Generates SLURM batch scripts with configurable resources and commands.
+    Integrates with Pathable for output file management.
+    """
+    
+    def __init__(self, job_name: str, script_path: Optional[str] = None):
+        """Initialize SLURM script generator.
+        
+        Args:
+            job_name: Name for the SLURM job
+            script_path: Optional path for the .sh file. If None, uses job_name.sh
+        """
+        self.job_name = job_name
+        
+        if script_path is None:
+            script_path = f"{job_name}.sh"
+        
+        self.script_pathable = Pathable(script_path)
+        
+        # Default SLURM parameters
+        self.params = {
+            "partition": "cpu_medium",
+            "time": "1:00:00",
+            "mem": "4G",
+            "cpus_per_task": 1,
+            "nodes": 1,
+            "ntasks": 1,
+            "mail_type": None,
+            "mail_user": None,
+        }
+        
+        # Custom SBATCH directives (for advanced options)
+        self.custom_directives = []
+        
+        # Commands to execute
+        self.commands = []
+        
+        # Pre-commands (e.g., module load, conda activate)
+        self.pre_commands = []
+        
+        # Post-commands (e.g., cleanup)
+        self.post_commands = []
+    
+    def setPartition(self, partition: str):
+        """Set the SLURM partition/queue."""
+        self.params["partition"] = partition
+        return self
+    
+    def setTime(self, time: str):
+        """Set the time limit (format: HH:MM:SS or D-HH:MM:SS)."""
+        self.params["time"] = time
+        return self
+    
+    def setMemory(self, memory: str):
+        """Set memory requirement (e.g., '4G', '500M')."""
+        self.params["mem"] = memory
+        return self
+    
+    def setCpus(self, cpus: int):
+        """Set number of CPUs per task."""
+        self.params["cpus_per_task"] = cpus
+        return self
+    
+    def setNodes(self, nodes: int):
+        """Set number of nodes."""
+        self.params["nodes"] = nodes
+        return self
+    
+    def setTasks(self, ntasks: int):
+        """Set number of tasks."""
+        self.params["ntasks"] = ntasks
+        return self
+    
+    def setEmail(self, email: str, mail_type: str = "END,FAIL"):
+        """Set email notifications.
+        
+        Args:
+            email: Email address
+            mail_type: When to send email (e.g., 'END,FAIL', 'ALL', 'BEGIN')
+        """
+        self.params["mail_user"] = email
+        self.params["mail_type"] = mail_type
+        return self
+    
+    def addCustomDirective(self, directive: str):
+        """Add custom SBATCH directive (e.g., '--gres=gpu:1')."""
+        self.custom_directives.append(directive)
+        return self
+    
+    def setOutputLog(self, output_path: Optional[str] = None):
+        """Set output log file path. If None, uses slurm_{job_name}_output.log."""
+        if output_path is None:
+            output_path = f"slurm_{self.job_name}_output.log"
+        self.params["output"] = output_path
+        return self
+    
+    def setErrorLog(self, error_path: Optional[str] = None):
+        """Set error log file path. If None, uses slurm_{job_name}_error.log."""
+        if error_path is None:
+            error_path = f"slurm_{self.job_name}_error.log"
+        self.params["error"] = error_path
+        return self
+    
+    def addCondaActivate(self, env_name: str):
+        """Add conda environment activation to pre-commands."""
+        self.pre_commands.append(f"conda activate {env_name}")
+        return self
+    
+    def addModuleLoad(self, *modules):
+        """Add module load commands to pre-commands."""
+        for module in modules:
+            self.pre_commands.append(f"module load {module}")
+        return self
+    
+    def addCommand(self, command: str):
+        """Add a command to execute."""
+        self.commands.append(command)
+        return self
+    
+    def addPythonScript(self, script_path: str, *args):
+        """Add a Python script execution command.
+        
+        Args:
+            script_path: Path to Python script
+            *args: Additional arguments to pass to script
+        """
+        cmd = f"python {script_path}"
+        if args:
+            cmd += " " + " ".join(str(arg) for arg in args)
+        self.commands.append(cmd)
+        return self
+    
+    def addPostCommand(self, command: str):
+        """Add a command to run after main commands (e.g., cleanup)."""
+        self.post_commands.append(command)
+        return self
+    
+    def generate(self) -> str:
+        """Generate the SLURM script content as a string."""
+        lines = ["#!/bin/bash"]
+        
+        # Add SBATCH directives
+        lines.append(f"#SBATCH --job-name={self.job_name}")
+        
+        for key, value in self.params.items():
+            if value is not None and key not in ["output", "error"]:
+                lines.append(f"#SBATCH --{key.replace('_', '-')}={value}")
+        
+        # Output and error logs
+        output = self.params.get("output", f"slurm_{self.job_name}_output.log")
+        error = self.params.get("error", f"slurm_{self.job_name}_error.log")
+        lines.append(f"#SBATCH --output={output}")
+        lines.append(f"#SBATCH --error={error}")
+        
+        # Custom directives
+        for directive in self.custom_directives:
+            lines.append(f"#SBATCH {directive}")
+        
+        lines.append("")
+        
+        # Pre-commands (modules, conda, etc.)
+        if self.pre_commands:
+            lines.append("# Environment setup")
+            lines.extend(self.pre_commands)
+            lines.append("")
+        
+        # Main commands
+        if self.commands:
+            lines.append("# Main execution")
+            lines.extend(self.commands)
+            lines.append("")
+        
+        # Post-commands
+        if self.post_commands:
+            lines.append("# Cleanup")
+            lines.extend(self.post_commands)
+            lines.append("")
+        
+        return "\n".join(lines)
+    
+    def write(self, make_executable: bool = True) -> str:
+        """Write the SLURM script to file.
+        
+        Args:
+            make_executable: If True, chmod +x the script
+        
+        Returns:
+            Path to the created script file
+        """
+        content = self.generate()
+        script_path = self.script_pathable.getPosition()
+        
+        # Ensure directory exists
+        self.script_pathable.ensureDirectoryExistence()
+        
+        # Write script
+        with open(script_path, 'w') as f:
+            f.write(content)
+        
+        # Make executable
+        if make_executable:
+            os.chmod(script_path, 0o755)
+        
+        return script_path
+    
+    def getScriptPath(self) -> str:
+        """Get the path to the script file."""
+        return self.script_pathable.getPosition()
+    
+    def getScriptPathable(self) -> Pathable:
+        """Get the Pathable object for the script."""
+        return self.script_pathable
+    
+    def getOutputLog(self) -> str:
+        """Get the expected output log path."""
+        return self.params.get("output", f"slurm_{self.job_name}_output.log")
+    
+    def getErrorLog(self) -> str:
+        """Get the expected error log path."""
+        return self.params.get("error", f"slurm_{self.job_name}_error.log")
+    
+    def submit(self) -> dict:
+        """Submit the job to SLURM (requires script to be written first).
+        
+        Returns:
+            dict with status, message, and job_id (if successful)
+        """
+        script_path = self.script_pathable.getPosition()
+        
+        if not os.path.exists(script_path):
+            return {
+                "status": "error",
+                "message": f"Script not found: {script_path}. Call write() first."
+            }
+        
+        # Submit using sbatch
+        bash = BashIt()
+        bash.setCommand(f"sbatch {script_path}")
+        
+        if bash.run():
+            output = bash.getBashOutput()
+            if output:
+                output_str = output.decode('utf-8').strip()
+                # Parse job ID from output (typically: "Submitted batch job 12345")
+                import re
+                match = re.search(r'Submitted batch job (\d+)', output_str)
+                if match:
+                    return {
+                        "status": "ok",
+                        "message": output_str,
+                        "job_id": match.group(1)
+                    }
+                return {
+                    "status": "ok",
+                    "message": output_str
+                }
+            else:
+                error = bash.getBashError()
+                return {
+                    "status": "error",
+                    "message": error.decode('utf-8') if error else "Unknown error"
+                }
+        else:
+            return {
+                "status": "error",
+                "message": "Failed to execute sbatch command"
+            }
+
+
+def createSlurmScript(job_name: str, script_path: Optional[str] = None) -> SlurmScript:
+    """Factory function to create a SlurmScript object.
+    
+    Args:
+        job_name: Name for the SLURM job
+        script_path: Optional path for the .sh file
+    
+    Returns:
+        SlurmScript object for method chaining
+    """
+    return SlurmScript(job_name, script_path)
+
+
 if __name__=="__main__":
 
     # AA=createRandomTemporaryPathableFromFileName('a.txt')
